@@ -8,5 +8,6 @@ if __name__ == "__main__":
     sv_ttk.set_theme("dark")
 
     app = src.App(parent=root)
-    app.pack(fill="both", expand=False)
+   #app.pack(fill="both", expand=False)
+    app.pack()
     app.mainloop()

@@ -1,8 +1,11 @@
 from .import window_position
+from ..drives import Browser
 from tkinter import ttk
 import tkinter as tk
 import sv_ttk
+from tkinter import filedialog
 
+groups = ['#1', '#2', '#3', '#4', '#5']
 
 class App(ttk.Frame):
     def __init__(self, parent):
@@ -12,19 +15,20 @@ class App(ttk.Frame):
         self.parent = parent
         self.parent.title("Whatools")
         self.parent.tk.call('wm', 'iconphoto', self.parent._w, tk.PhotoImage(file='src/img/whatools.png'))
-        self.parent.update_idletasks()  
-        self.parent.geometry(window_position(self.parent, 800, 550))
+        #self.parent.update_idletasks()  
+        self.parent.geometry(window_position(self.parent, 1150, 550))
 
 
 
         # Make the app responsive
-        for index in (0, 1):
-            self.columnconfigure(index=index, weight=1)
-            self.rowconfigure(index=index, weight=1)
+        #for index in (0, 1):
+        #    self.columnconfigure(index=index, weight=1)
+        #    self.rowconfigure(index=index, weight=1)
 
-        self.combo_list = ['label1', 'labe2', 'label3']
+        #self.combo_list = ['label1', 'labe2', 'label3']
+        
         # Create control variables
-
+        self.msg = ''
         # Create widgets
         self.setup_widgets()
 
@@ -36,19 +40,21 @@ class App(ttk.Frame):
             row=0, column=0, padx=(20, 10), pady=(20, 10), sticky="nsew"
         )
 
-        # Entry for input text
-        self.input_text = tk.Text(self.send_frame, width=98)
+        # Input text msg
+        self.input_text = tk.Text(self.send_frame, width=51)
         self.input_text.pack(fill='both', expand=True)
 
+        # Button Send
+        ttk.Button(
+            self.send_frame, text="Send", style="Accent.TButton",command=self.send_msg
+        ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
+        
+        # Button Load
+        ttk.Button(
+            self.send_frame, text="Load", command= self.browse_files, #style="Accent.TButton"
+        ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
+
         # Button Save
-        ttk.Button(
-            self.send_frame, text="Send", style="Accent.TButton",
-        ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
-
-        ttk.Button(
-            self.send_frame, text="Load", #style="Accent.TButton"
-        ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
-
         ttk.Button(
             self.send_frame, text="Save", #style="Accent.TButton"
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 0), pady=5)
@@ -97,20 +103,20 @@ class App(ttk.Frame):
         self.scrollbar.config(command=self.treeview.yview)
 
         # Treeview columns
-        self.treeview.column("#0", anchor="w", width=120)
+        self.treeview.column("#0", anchor="w", width=250)
         self.treeview.column(1, anchor="w", width=120)
         self.treeview.column(2, anchor="w", width=120)
 
         # Define treeview data
         treeview_data = [
-            ("", 1, "Confituras", ("Usuarios", "Value 1")),
-            (1, 2, "David Capo 🤬🤬Stgo compra y venta #1", ("135", "Value 1.1")),
-            (1, 3, "David Capo 🤬🤬Stgo compra y venta #2", ("1587", "Value 1.2")),
-            (1, 4, "David Capo 🤬🤬 Stgo compra y venta#4", ("45", "Value 1.3")),
-            (1, 5, "David Capo 🤬🤬 Stgo compra y venta#6", ("478", "Value 1.4")),
-            ("", 6, "Otros grupos", ("Usuarios", "Value 2")),
-            (6, 7, "Compra y Venta Pochy 2", ("456", "Value 2.1")),
-            (6, 8, "Ventas Baratillo Stgo No5", ("365", "Value 2.2")),
+            ("", 1, "Confituras", ("Usuarios", "Valor")),
+            (1, 2, "David Capo 🤬🤬Stgo compra y venta #1", ("135", ".....")),
+            (1, 3, "David Capo 🤬🤬Stgo compra y venta #2", ("1587", ".....")),
+            (1, 4, "David Capo 🤬🤬 Stgo compra y venta#4", ("45", ".....")),
+            (1, 5, "David Capo 🤬🤬 Stgo compra y venta#6", ("478", ".....")),
+            ("", 6, "Otros grupos", ("Usuarios", "Valor")),
+            (6, 7, "Compra y Venta Pochy 2", ("456", ".....")),
+            (6, 8, "Ventas Baratillo Stgo No5", ("365", ".....")),
         ]
 
         # Insert treeview data
@@ -131,3 +137,20 @@ class App(ttk.Frame):
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
         self.sizegrip.grid(row=100, column=100, padx=(0, 5), pady=(0, 5))
+
+    def browse_files(self): 
+        path = filedialog.askopenfilename(initialdir = "/home/lcasan/vscode/python/whatools/src/", 
+                                              title = "Select a file", 
+                                              filetypes = (("Text files", 
+                                                            "*.txt*"), 
+                                                           ("all files", 
+                                                            "*.*")))  
+        with open(path,'r', encoding='utf8') as file:
+                self.msg = file.read()
+
+        self.input_text.insert('1.0', self.msg)
+
+    def send_msg(self):
+        browser = Browser()
+        print('[Sending message]')
+        browser.send_message(self.msg, groups)

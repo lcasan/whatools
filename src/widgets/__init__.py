@@ -3,4 +3,4 @@ def window_position(root, width, height):
     y = root.winfo_screenheight() // 2 - height // 2
     position = str(width) + "x" + str(height) + "+" + str(x) + "+" + str(y)
     
-    return position
+    return position                                                                         
