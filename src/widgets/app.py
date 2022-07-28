@@ -4,8 +4,9 @@ from tkinter import ttk
 import tkinter as tk
 import sv_ttk
 from tkinter import filedialog
+from emoji import emojize
 
-groups = ['#1', '#2', '#3', '#4', '#5']
+groups = ['#1']
 
 class App(ttk.Frame):
     def __init__(self, parent):
@@ -51,14 +52,14 @@ class App(ttk.Frame):
         
         # Button Load
         ttk.Button(
-            self.send_frame, text="Load", command= self.browse_files, #style="Accent.TButton"
+            self.send_frame, text="Load", command= self.load, #style="Accent.TButton"
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
 
         # Button Save
         ttk.Button(
-            self.send_frame, text="Save", #style="Accent.TButton"
+            self.send_frame, text="Save", command=self.save,#style="Accent.TButton",
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 0), pady=5)
-
+        
         self.send_frame.columnconfigure(index=0, weight=1)
 
         #--------------------------------------------------------------------
@@ -69,14 +70,12 @@ class App(ttk.Frame):
             row=0, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew"
         )
 
-        #search group Combobox
-        #self.combobox = ttk.Combobox(self.group_frame, values=self.combo_list)
-        #self.combobox.current(0)
-        #self.combobox.pack(side=tk.LEFT)
+        #Search group Combobox
+        self.search = ttk.Combobox(self.group_frame)
+        #self.search.current(0)
+        self.search.pack()
 
         #Add Group Button:
-        
-
 
         # Panedwindow
         self.paned = ttk.PanedWindow(self.group_frame)
@@ -105,7 +104,6 @@ class App(ttk.Frame):
         # Treeview columns
         self.treeview.column("#0", anchor="w", width=250)
         self.treeview.column(1, anchor="w", width=120)
-        self.treeview.column(2, anchor="w", width=120)
 
         # Define treeview data
         treeview_data = [
@@ -132,25 +130,48 @@ class App(ttk.Frame):
         # Select and scroll
         self.treeview.selection_set("8")
         self.treeview.see("7")
-
-
+        
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
         self.sizegrip.grid(row=100, column=100, padx=(0, 5), pady=(0, 5))
 
-    def browse_files(self): 
-        path = filedialog.askopenfilename(initialdir = "/home/lcasan/vscode/python/whatools/src/", 
-                                              title = "Select a file", 
-                                              filetypes = (("Text files", 
-                                                            "*.txt*"), 
-                                                           ("all files", 
-                                                            "*.*")))  
-        with open(path,'r', encoding='utf8') as file:
-                self.msg = file.read()
-
-        self.input_text.insert('1.0', self.msg)
+    '''
+        Function to load the templates saved in a custom directory
+    '''
+    def load(self): 
+        try:
+            path = filedialog.askopenfilename(initialdir = '/', 
+                                          title = "Select a template", 
+                                          filetypes = (("Text files", 
+                                                        "*.txt*"), 
+                                                       ("all files", 
+                                                        "*.*")))  
+            with open(path,'r', encoding='utf8') as file:
+                msg = file.read()
+            self.input_text.insert('1.0', msg)
+        except:
+            print('Operation not completed in filedialog')
+    
+    '''
+        Function to save in a custom directory the templates created in the text field
+    '''
+    def save(self):
+        if self.input_text.edit_modified():
+            extensions = [('All Files', '*.*'),('Text Document', '*.txt')]
+            try:
+                #Create file and save its path 
+                path = filedialog.asksaveasfile(initialdir = "/home/lcasan/Documents/", filetypes=extensions)
+                
+                #Write in created file
+                with open(path.name, 'w', encoding='utf8') as file:
+                    file.write(self.input_text.get('1.0', 'end'))
+            except:
+                print('Operation not completed in filedialog')
+        else:
+            tk.messagebox.showinfo(message='Not changes in the text field yet')
 
     def send_msg(self):
         browser = Browser()
+        self.msg = self.input_text.get('1.0', 'end')
         print('[Sending message]')
         browser.send_message(self.msg, groups)
