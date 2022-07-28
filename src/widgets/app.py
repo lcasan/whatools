@@ -2,9 +2,8 @@ from .import window_position
 from ..drives import Browser
 from tkinter import ttk
 import tkinter as tk
-import sv_ttk
 from tkinter import filedialog
-from emoji import emojize
+from .form import Form
 
 groups = ['#1']
 
@@ -17,7 +16,7 @@ class App(ttk.Frame):
         self.parent.title("Whatools")
         self.parent.tk.call('wm', 'iconphoto', self.parent._w, tk.PhotoImage(file='src/img/whatools.png'))
         #self.parent.update_idletasks()  
-        self.parent.geometry(window_position(self.parent, 770, 550))
+        self.parent.geometry(window_position(self.parent, 780, 550))
 
 
 
@@ -94,7 +93,8 @@ class App(ttk.Frame):
         self.groups = ttk.Frame(self.pane_1)
         self.groups.pack(side="left", fill="y")
 
-        ttk.Label(self.groups, text='first').pack()
+        #Add new group
+        ttk.Button(self.group_frame, text='+', style='Accent.TButton', command=self.new_group).pack(fill='both', pady=5, padx=(0,8))
 
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
@@ -135,6 +135,16 @@ class App(ttk.Frame):
         else:
             tk.messagebox.showinfo(message='Not changes in the text field yet')
 
+    '''
+        Function to create new group
+    '''
+    def new_group(self):
+        form = Form(parent=self.parent)
+        self.parent.wait_window()
+
+    '''
+        Function to send a message to all groups
+    '''
     def send_msg(self):
         browser = Browser()
         self.msg = self.input_text.get('1.0', 'end')
