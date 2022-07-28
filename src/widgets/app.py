@@ -17,7 +17,7 @@ class App(ttk.Frame):
         self.parent.title("Whatools")
         self.parent.tk.call('wm', 'iconphoto', self.parent._w, tk.PhotoImage(file='src/img/whatools.png'))
         #self.parent.update_idletasks()  
-        self.parent.geometry(window_position(self.parent, 1150, 550))
+        self.parent.geometry(window_position(self.parent, 770, 550))
 
 
 
@@ -70,12 +70,13 @@ class App(ttk.Frame):
             row=0, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew"
         )
 
-        #Search group Combobox
-        self.search = ttk.Combobox(self.group_frame)
-        #self.search.current(0)
-        self.search.pack()
+        #Filter by group
+        self.search = ttk.Entry(self.group_frame)
+        self.search.pack(fill='both', pady=5, padx=(0,8))
 
-        #Add Group Button:
+        #Filter by tag
+        self.tags = ttk.Combobox(self.group_frame)
+        self.tags.pack(fill='both', pady=5, padx=(0,8))
 
         # Panedwindow
         self.paned = ttk.PanedWindow(self.group_frame)
@@ -89,48 +90,12 @@ class App(ttk.Frame):
         self.scrollbar = ttk.Scrollbar(self.pane_1)
         self.scrollbar.pack(side="right", fill="y")
 
-        # Treeview
-        self.treeview = ttk.Treeview(
-            self.pane_1,
-            columns=("1", "2"),
-            height=10,
-            selectmode="browse",
-            show=("tree",),
-            yscrollcommand=self.scrollbar.set,
-        )
-        self.treeview.pack(expand=True, fill="both")
-        self.scrollbar.config(command=self.treeview.yview)
+        #List of groups
+        self.groups = ttk.Frame(self.pane_1)
+        self.groups.pack(side="left", fill="y")
 
-        # Treeview columns
-        self.treeview.column("#0", anchor="w", width=250)
-        self.treeview.column(1, anchor="w", width=120)
+        ttk.Label(self.groups, text='first').pack()
 
-        # Define treeview data
-        treeview_data = [
-            ("", 1, "Confituras", ("Usuarios", "Valor")),
-            (1, 2, "David Capo 🤬🤬Stgo compra y venta #1", ("135", ".....")),
-            (1, 3, "David Capo 🤬🤬Stgo compra y venta #2", ("1587", ".....")),
-            (1, 4, "David Capo 🤬🤬 Stgo compra y venta#4", ("45", ".....")),
-            (1, 5, "David Capo 🤬🤬 Stgo compra y venta#6", ("478", ".....")),
-            ("", 6, "Otros grupos", ("Usuarios", "Valor")),
-            (6, 7, "Compra y Venta Pochy 2", ("456", ".....")),
-            (6, 8, "Ventas Baratillo Stgo No5", ("365", ".....")),
-        ]
-
-        # Insert treeview data
-        for item in treeview_data:
-            parent, iid, text, values = item
-            self.treeview.insert(
-                parent=parent, index="end", iid=iid, text=text, values=values
-            )
-
-            if not parent or iid in {8, 21}:
-                self.treeview.item(iid, open=True)  # Open parents
-
-        # Select and scroll
-        self.treeview.selection_set("8")
-        self.treeview.see("7")
-        
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
         self.sizegrip.grid(row=100, column=100, padx=(0, 5), pady=(0, 5))

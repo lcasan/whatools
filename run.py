@@ -4,6 +4,7 @@ import src
 
 
 if __name__ == "__main__":
+    src.create_db()
     root = tk.Tk()
     sv_ttk.set_theme("dark")
 
