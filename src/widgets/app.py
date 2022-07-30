@@ -4,8 +4,7 @@ from tkinter import ttk
 import tkinter as tk
 from tkinter import filedialog
 from .form import Form
-
-groups = ['#1']
+import sqlite3
 
 class App(ttk.Frame):
     def __init__(self, parent):
@@ -17,6 +16,7 @@ class App(ttk.Frame):
         self.parent.tk.call('wm', 'iconphoto', self.parent._w, tk.PhotoImage(file='src/img/whatools.png'))
         #self.parent.update_idletasks()  
         self.parent.geometry(window_position(self.parent, 780, 550))
+        self.parent.resizable(False, False)
 
 
 
@@ -81,24 +81,26 @@ class App(ttk.Frame):
         self.paned = ttk.PanedWindow(self.group_frame)
         self.paned.pack(fill='both',expand=True)
 
-        # Pane #1
-        self.pane_1 = ttk.Frame(self.paned, padding=5)
-        self.paned.add(self.pane_1, weight=1)
-
         # Scrollbar
-        self.scrollbar = ttk.Scrollbar(self.pane_1)
+        self.scrollbar = ttk.Scrollbar(self.paned)
         self.scrollbar.pack(side="right", fill="y")
 
+        #Canvas
+        self.canvas = tk.Canvas(self.paned,width=10, height=340, scrollregion=(0,0,10,3000))
+        self.canvas.pack(fill='both')
+        
         #List of groups
-        self.groups = ttk.Frame(self.pane_1)
-        self.groups.pack(side="left", fill="y")
+        self.update_groups()
 
         #Add new group
         ttk.Button(self.group_frame, text='+', style='Accent.TButton', command=self.new_group).pack(fill='both', pady=5, padx=(0,8))
+      
 
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
         self.sizegrip.grid(row=100, column=100, padx=(0, 5), pady=(0, 5))
+
+        
 
     '''
         Function to load the templates saved in a custom directory
@@ -139,14 +141,54 @@ class App(ttk.Frame):
         Function to create new group
     '''
     def new_group(self):
-        form = Form(parent=self.parent)
-        self.parent.wait_window()
+        self.parent.wait_window(Form(parent=self.parent))
+        print('update groups')
+        self.update_groups()
+
+
+    '''
+        Function for update list of groups
+    '''
+    def update_groups(self):
+        #Query to database
+        with sqlite3.connect('src/database/model.db') as db:
+            cursor = db.cursor()
+            query = cursor.execute('select name from grupo')
+        
+        groups = query.fetchall()
+
+        self.canvas.destroy()
+        
+        #Canvas
+        self.canvas = tk.Canvas(self.paned,width=10, height=340, scrollregion=(0,0,10,3000))
+        self.canvas.pack(fill='both')
+        
+        #Update list
+        posy = 3
+        self.checkbutton_list = []
+        for group in groups:
+            var = tk.BooleanVar()
+            self.checkbutton_list.append((var,group[0]))
+            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=var),)
+            posy = posy + 30
+
+        self.scrollbar.config(command=self.canvas.yview)
+        self.canvas.config(yscrollcommand=self.scrollbar.set)
 
     '''
         Function to send a message to all groups
     '''
     def send_msg(self):
         browser = Browser()
+
+        #msg
         self.msg = self.input_text.get('1.0', 'end')
         print('[Sending message]')
+        
+        #List of groups selected
+        groups = []
+        for checkbutton in self.checkbutton_list:
+            if checkbutton[0].get() == True:
+                groups.append(checkbutton[1])
+        
         browser.send_message(self.msg, groups)

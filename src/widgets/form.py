@@ -35,5 +35,5 @@ class Form(tk.Toplevel):
             cursor = db.cursor()
             cursor.execute("insert into grupo(name, tag, number_of_users) values (?, ?, ?)", (name, tag, 0))
             db.commit()
-
+        
         self.destroy()
