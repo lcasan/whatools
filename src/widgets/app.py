@@ -73,9 +73,12 @@ class App(ttk.Frame):
         self.search = ttk.Entry(self.group_frame)
         self.search.pack(fill='both', pady=5, padx=(0,8))
 
-        #Filter by tag
-        self.tags = ttk.Combobox(self.group_frame)
-        self.tags.pack(fill='both', pady=5, padx=(0,8))
+        #Filter by tag 
+        self.tags = {}
+        self.combobox_tag = ttk.Combobox(self.group_frame, values=list(self.tags))      
+        self.combobox_tag.pack(fill='both', pady=5, padx=(0,8))
+
+        
 
         # Panedwindow
         self.paned = ttk.PanedWindow(self.group_frame)
@@ -144,8 +147,7 @@ class App(ttk.Frame):
         self.parent.wait_window(Form(parent=self.parent))
         print('update groups')
         self.update_groups()
-
-
+          
     '''
         Function for update list of groups
     '''
@@ -153,14 +155,14 @@ class App(ttk.Frame):
         #Query to database
         with sqlite3.connect('src/database/model.db') as db:
             cursor = db.cursor()
-            query = cursor.execute('select name from grupo')
+            self.tags = set(cursor.execute('select tag from grupo').fetchall())
+            groups = cursor.execute('select name from grupo').fetchall()
         
-        groups = query.fetchall()
-
+        self.combobox_tag.config(values=list(self.tags))
         self.canvas.destroy()
         
         #Canvas
-        self.canvas = tk.Canvas(self.paned,width=10, height=340, scrollregion=(0,0,10,3000))
+        self.canvas = tk.Canvas(self.paned,width=10, height=340, scrollregion=(0,0,10,30*len(groups)))
         self.canvas.pack(fill='both')
         
         #Update list
