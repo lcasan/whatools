@@ -62,14 +62,14 @@ class App(ttk.Frame):
         self.group_frame = ttk.LabelFrame(self, text="Groups", padding=(20, 10))
         self.group_frame.grid(row=0, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew")
 
-        #Filter by group
-        self.find = tk.StringVar()
-        self.search = ttk.Entry(self.group_frame, textvariable=self.find)
+        #Filter group by name
+        self.var_search = tk.StringVar()
+        self.search = ttk.Entry(self.group_frame, textvariable=self.var_search)
         self.search.pack(fill='both', pady=5, padx=(0,8))
 
-        #Filter by tag 
-        self.tags = {}
-        self.combobox_tag = ttk.Combobox(self.group_frame, values=list(self.tags))      
+        #Filter group by tag
+        self.var_tag = tk.StringVar()        
+        self.combobox_tag = ttk.Combobox(self.group_frame, textvariable=self.var_tag)      
         self.combobox_tag.pack(fill='both', pady=5, padx=(0,8))
 
         # Panedwindow
@@ -93,7 +93,8 @@ class App(ttk.Frame):
         self.sizegrip = ttk.Sizegrip(self)
         self.sizegrip.grid(row=100, column=100, padx=(0, 5), pady=(0, 5))
 
-        self.find.trace_add('write', self.filter_by_name)
+        self.var_search.trace_add('write', self.filter_by_name)
+        self.var_tag.trace_add('write', self.filter_by_tag)
         
 
     '''
@@ -136,7 +137,6 @@ class App(ttk.Frame):
     '''
     def new_group(self):
         self.parent.wait_window(Form(parent=self.parent, tags=list(self.tags)))
-        print('updating groups...')
         self.update()
         print('[updated groups]')
     
@@ -148,7 +148,7 @@ class App(ttk.Frame):
         with sqlite3.connect('src/database/model.db') as db:
             cursor = db.cursor()
             self.tags = set(cursor.execute('select tag from grupo').fetchall())
-            self.groups = cursor.execute('select name from grupo').fetchall()
+            self.groups = cursor.execute('select name, tag from grupo').fetchall()
         
         #update tags
         self.combobox_tag.config(values=list(self.tags))
@@ -179,7 +179,7 @@ class App(ttk.Frame):
         self.canvas.config(yscrollcommand=self.scrollbar.set)
     
     '''
-        Function for filter groups
+        Function for filter groups by name
     '''
     def filter_by_name(self, *arg):
         text = self.search.get()
@@ -188,14 +188,30 @@ class App(ttk.Frame):
             ls_groups = []
             for group in self.groups:
                 if text == group[0][0:len(text)]:
-                    ls_groups.append((group[0], ))
+                    ls_groups.append(group)
                     continue
 
             self.update_groups(ls_groups)
         else:
             self.update() 
 
-    
+    '''
+        Function for filter groups by tag
+    '''
+    def filter_by_tag(self,*arg):
+        text = self.combobox_tag.get()
+        if text != '':
+            #find substring in string
+            ls_groups = []
+            for group in self.groups:
+                if text == group[1]:
+                    ls_groups.append((group))
+                    continue
+
+            self.update_groups(ls_groups)
+        else:
+            self.update()
+        
     '''
         Function to send a message to all groups
     '''
