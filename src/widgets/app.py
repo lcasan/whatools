@@ -25,20 +25,15 @@ class App(ttk.Frame):
         #    self.columnconfigure(index=index, weight=1)
         #    self.rowconfigure(index=index, weight=1)
 
-        #self.combo_list = ['label1', 'labe2', 'label3']
-        
-        # Create control variables
-        self.msg = ''
         # Create widgets
         self.setup_widgets()
 
     def setup_widgets(self):
+        ####### SECTION MESSAGE #######
+
         # Create a Frame for the send msg
-        self.send_frame = ttk.LabelFrame(
-            self, text="Send message", padding=(20, 10))
-        self.send_frame.grid(
-            row=0, column=0, padx=(20, 10), pady=(20, 10), sticky="nsew"
-        )
+        self.send_frame = ttk.LabelFrame(self, text="Send message", padding=(20, 10))
+        self.send_frame.grid(row=0, column=0, padx=(20, 10), pady=(20, 10), sticky="nsew")
 
         # Input text msg
         self.input_text = tk.Text(self.send_frame, width=51)
@@ -61,24 +56,21 @@ class App(ttk.Frame):
         
         self.send_frame.columnconfigure(index=0, weight=1)
 
-        #--------------------------------------------------------------------
+        ####### SECTION GROUPS #######
+
         # Create a Frame for the groups
-        self.group_frame = ttk.LabelFrame(
-            self, text="Groups", padding=(20, 10))
-        self.group_frame.grid(
-            row=0, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew"
-        )
+        self.group_frame = ttk.LabelFrame(self, text="Groups", padding=(20, 10))
+        self.group_frame.grid(row=0, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew")
 
         #Filter by group
-        self.search = ttk.Entry(self.group_frame)
+        self.find = tk.StringVar()
+        self.search = ttk.Entry(self.group_frame, textvariable=self.find)
         self.search.pack(fill='both', pady=5, padx=(0,8))
 
         #Filter by tag 
         self.tags = {}
         self.combobox_tag = ttk.Combobox(self.group_frame, values=list(self.tags))      
         self.combobox_tag.pack(fill='both', pady=5, padx=(0,8))
-
-        
 
         # Panedwindow
         self.paned = ttk.PanedWindow(self.group_frame)
@@ -88,21 +80,20 @@ class App(ttk.Frame):
         self.scrollbar = ttk.Scrollbar(self.paned)
         self.scrollbar.pack(side="right", fill="y")
 
-        #Canvas
-        self.canvas = tk.Canvas(self.paned,width=10, height=340, scrollregion=(0,0,10,3000))
-        self.canvas.pack(fill='both')
+        #Temporal canvas
+        self.canvas = tk.Canvas()
         
         #List of groups
-        self.update_groups()
+        self.update()
 
         #Add new group
         ttk.Button(self.group_frame, text='+', style='Accent.TButton', command=self.new_group).pack(fill='both', pady=5, padx=(0,8))
       
-
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
         self.sizegrip.grid(row=100, column=100, padx=(0, 5), pady=(0, 5))
 
+        self.find.trace_add('write', self.filter_by_name)
         
 
     '''
@@ -130,7 +121,7 @@ class App(ttk.Frame):
             extensions = [('All Files', '*.*'),('Text Document', '*.txt')]
             try:
                 #Create file and save its path 
-                path = filedialog.asksaveasfile(initialdir = "/home/lcasan/Documents/", filetypes=extensions)
+                path = filedialog.asksaveasfile(initialdir = "/", filetypes=extensions)
                 
                 #Write in created file
                 with open(path.name, 'w', encoding='utf8') as file:
@@ -144,53 +135,89 @@ class App(ttk.Frame):
         Function to create new group
     '''
     def new_group(self):
-        self.parent.wait_window(Form(parent=self.parent))
-        print('update groups')
-        self.update_groups()
-          
+        self.parent.wait_window(Form(parent=self.parent, tags=list(self.tags)))
+        print('updating groups...')
+        self.update()
+        print('[updated groups]')
+    
     '''
-        Function for update list of groups
+        Function for update all elements in window
     '''
-    def update_groups(self):
+    def update(self):
         #Query to database
         with sqlite3.connect('src/database/model.db') as db:
             cursor = db.cursor()
             self.tags = set(cursor.execute('select tag from grupo').fetchall())
-            groups = cursor.execute('select name from grupo').fetchall()
+            self.groups = cursor.execute('select name from grupo').fetchall()
         
+        #update tags
         self.combobox_tag.config(values=list(self.tags))
+
+        #update groups
+        self.update_groups(self.groups)
+    
+    '''
+        Function for update the groups
+    '''
+    def update_groups(self, groups):
         self.canvas.destroy()
         
-        #Canvas
+        #Create canvas
         self.canvas = tk.Canvas(self.paned,width=10, height=340, scrollregion=(0,0,10,30*len(groups)))
         self.canvas.pack(fill='both')
         
-        #Update list
+        #Update list of groups
         posy = 3
-        self.checkbutton_list = []
+        self.ls_checkbutton = []
         for group in groups:
             var = tk.BooleanVar()
-            self.checkbutton_list.append((var,group[0]))
-            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=var),)
+            self.ls_checkbutton.append((var,group[0]))
+            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=var))
             posy = posy + 30
 
         self.scrollbar.config(command=self.canvas.yview)
         self.canvas.config(yscrollcommand=self.scrollbar.set)
+    
+    '''
+        Function for filter groups
+    '''
+    def filter_by_name(self, *arg):
+        text = self.search.get()
+        if text != '':
+            #find substring in string
+            ls_groups = []
+            for group in self.groups:
+                if text == group[0][0:len(text)]:
+                    ls_groups.append((group[0], ))
+                    continue
 
+            self.update_groups(ls_groups)
+        else:
+            self.update() 
+
+    
     '''
         Function to send a message to all groups
     '''
     def send_msg(self):
-        browser = Browser()
-
-        #msg
-        self.msg = self.input_text.get('1.0', 'end')
+        #Msg
+        msg = self.input_text.get('1.0', 'end')
         print('[Sending message]')
         
         #List of groups selected
         groups = []
-        for checkbutton in self.checkbutton_list:
+        for checkbutton in self.ls_checkbutton:
             if checkbutton[0].get() == True:
                 groups.append(checkbutton[1])
+
+        #Send message
+        try:
+            browser = Browser()
+            browser.send_message(msg, groups)
+        except:
+            tk.messagebox.showwarning(message='You don\'t have connection')
+
+       
         
-        browser.send_message(self.msg, groups)
+            
+  

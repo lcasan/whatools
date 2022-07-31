@@ -5,7 +5,7 @@ from ..database import cursor
 import sqlite3
 
 class Form(tk.Toplevel):
-    def __init__(self, parent):
+    def __init__(self, parent, tags):
         super().__init__(parent)
         self.parent = parent
         self.title("Form")
@@ -19,7 +19,7 @@ class Form(tk.Toplevel):
 
         #Combobox for tags
         ttk.Label(self, text='Group\'s tag:').pack(pady=(10, 5))
-        self.tag = ttk.Combobox(self)
+        self.tag = ttk.Combobox(self, values=tags)
         self.tag.pack(fill='both', padx=15, pady=10)
 
         ttk.Button(self, text='Add', command=self.create_group, style='Accent.TButton').pack(fill='both', padx=15, pady=(30, 5))
