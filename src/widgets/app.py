@@ -15,7 +15,7 @@ class App(ttk.Frame):
         self.parent.title("Whatools")
         self.parent.tk.call('wm', 'iconphoto', self.parent._w, tk.PhotoImage(file='src/img/whatools.png'))
         #self.parent.update_idletasks()  
-        self.parent.geometry(window_position(self.parent, 780, 550))
+        self.parent.geometry(window_position(self.parent, 780, 560))
         self.parent.resizable(False, False)
 
 
@@ -54,6 +54,10 @@ class App(ttk.Frame):
             self.send_frame, text="Save", command=self.save,#style="Accent.TButton",
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 0), pady=5)
         
+        #Images
+        #ttk.Label(self.send_frame, text='Images\'s name:').pack(side=tk.BOTTOM, fill='both')
+        #ttk.Entry(self.send_frame).pack(side=tk.LEFT, fill='both')
+
         self.send_frame.columnconfigure(index=0, weight=1)
 
         ####### SECTION GROUPS #######
@@ -87,16 +91,42 @@ class App(ttk.Frame):
         self.update()
 
         #Add new group
-        ttk.Button(self.group_frame, text='+', style='Accent.TButton', command=self.new_group).pack(fill='both', pady=5, padx=(0,8))
-      
+        ttk.Button(self.group_frame, text='Create', style='Accent.TButton', command=self.new_group).pack(side='left', fill='both', pady=5, padx=(0,8))
+
+        #Delete group
+        ttk.Button(self.group_frame, text='Delete', command=self.delete_group).pack(side='left', fill='both', pady=5, padx=(0,8))
+
+        #Tag for group
+        ttk.Button(self.group_frame, text='Tag').pack(fill='both', pady=5, padx=(0,8))
+
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
         self.sizegrip.grid(row=100, column=100, padx=(0, 5), pady=(0, 5))
 
         self.var_search.trace_add('write', self.filter_by_name)
-        self.var_tag.trace_add('write', self.filter_by_tag)
-        
+        self.var_tag.trace_add('write', self.filter_by_tag)        
 
+    '''
+        Function to send a message to all groups
+    '''
+    def send_msg(self):
+        #Msg
+        msg = self.input_text.get('1.0', 'end')
+        print('[Sending message]')
+        
+        #List of groups selected
+        groups = []
+        for checkbutton in self.ls_checkbutton:
+            if checkbutton[0].get() == True:
+                groups.append(checkbutton[1])
+
+        #Send message
+        try:
+            browser = Browser()
+            browser.send_message(msg, groups)
+        except:
+            tk.messagebox.showwarning(message='You don\'t have connection')
+    
     '''
         Function to load the templates saved in a custom directory
     '''
@@ -141,6 +171,27 @@ class App(ttk.Frame):
         print('[updated groups]')
     
     '''
+        Function to delete group
+    '''
+    def delete_group(self):
+        #List of groups selected
+        groups = []
+        for checkbutton in self.ls_checkbutton:
+            if checkbutton[0].get() == True:
+                groups.append(checkbutton[1])
+        
+        #Query to database
+        with sqlite3.connect('src/database/model.db') as db:
+            cursor = db.cursor()
+        
+            for group in groups:
+                cursor.execute('delete from grupo where name = \'' + group + '\'')
+            
+            db.commit()
+
+        self.update()
+
+    '''
         Function for update all elements in window
     '''
     def update(self):
@@ -171,13 +222,13 @@ class App(ttk.Frame):
         self.ls_checkbutton = []
         for group in groups:
             var = tk.BooleanVar()
-            self.ls_checkbutton.append((var,group[0]))
-            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=var))
+            self.ls_checkbutton.append((var,group[0]))            
+            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=var, width=18))
             posy = posy + 30
-
+            
         self.scrollbar.config(command=self.canvas.yview)
         self.canvas.config(yscrollcommand=self.scrollbar.set)
-    
+        
     '''
         Function for filter groups by name
     '''
@@ -212,26 +263,7 @@ class App(ttk.Frame):
         else:
             self.update()
         
-    '''
-        Function to send a message to all groups
-    '''
-    def send_msg(self):
-        #Msg
-        msg = self.input_text.get('1.0', 'end')
-        print('[Sending message]')
-        
-        #List of groups selected
-        groups = []
-        for checkbutton in self.ls_checkbutton:
-            if checkbutton[0].get() == True:
-                groups.append(checkbutton[1])
-
-        #Send message
-        try:
-            browser = Browser()
-            browser.send_message(msg, groups)
-        except:
-            tk.messagebox.showwarning(message='You don\'t have connection')
+    
 
        
         
