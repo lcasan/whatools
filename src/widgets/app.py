@@ -32,33 +32,37 @@ class App(ttk.Frame):
         ####### SECTION MESSAGE #######
 
         # Create a Frame for the send msg
-        self.send_frame = ttk.LabelFrame(self, text="Send message", padding=(20, 10))
-        self.send_frame.grid(row=0, column=0, padx=(20, 10), pady=(20, 10), sticky="nsew")
+        send_frame = ttk.LabelFrame(self, text="Send message", padding=(20, 10))
+        send_frame.grid(row=0, column=0, padx=(20, 10), pady=(20, 10), sticky="nsew")
 
         # Input text msg
-        self.input_text = tk.Text(self.send_frame, width=51)
+        self.input_text = tk.Text(send_frame, width=51, height=22)
         self.input_text.pack(fill='both', expand=True)
+
+        frm = ttk.Frame(send_frame)
+        frm.pack(fill='x')
 
         # Button Send
         ttk.Button(
-            self.send_frame, text="Send", style="Accent.TButton",command=self.send_msg
+            frm, text="Send", style="Accent.TButton",command=self.send_msg
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
         
+        #Button Load Image
+        self.img_path = 'none'
+        self.button_image = ttk.Button(send_frame, text="Image", command= self.load_img)
+        self.button_image.pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
+
         # Button Load
         ttk.Button(
-            self.send_frame, text="Load", command= self.load, #style="Accent.TButton"
+            send_frame, text="Load", command= self.load
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
 
         # Button Save
         ttk.Button(
-            self.send_frame, text="Save", command=self.save,#style="Accent.TButton",
-        ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 0), pady=5)
-        
-        #Images
-        #ttk.Label(self.send_frame, text='Images\'s name:').pack(side=tk.BOTTOM, fill='both')
-        #ttk.Entry(self.send_frame).pack(side=tk.LEFT, fill='both')
+            send_frame, text="Save", command=self.save
+        ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
 
-        self.send_frame.columnconfigure(index=0, weight=1)
+        send_frame.columnconfigure(index=0, weight=1)
 
         ####### SECTION GROUPS #######
 
@@ -109,24 +113,29 @@ class App(ttk.Frame):
     '''
         Function to send a message to all groups
     '''
-    def send_msg(self):
+    def send_msg(self):            
         #Msg
         msg = self.input_text.get('1.0', 'end')
-        print('[Sending message]')
         
         #List of groups selected
         groups = []
         for checkbutton in self.ls_checkbutton:
             if checkbutton[0].get() == True:
                 groups.append(checkbutton[1])
+        
+        browser = Browser()
+        print('[Sending message]')
+        if self.img_path != 'none':
+            if self.input_text.edit_modified():
+                print('True, True')
+                browser.send_message(msg, groups, True, True, self.img_path)
+            else:
+                print('True, False')
+                browser.send_message(msg, groups, True, False, self.img_path)
+        else:
+            print('False, True')
+            browser.send_message(msg, groups, False, True, self.img_path)           
 
-        #Send message
-        try:
-            browser = Browser()
-            browser.send_message(msg, groups)
-        except:
-            tk.messagebox.showwarning(message='You don\'t have connection')
-    
     '''
         Function to load the templates saved in a custom directory
     '''
@@ -134,7 +143,7 @@ class App(ttk.Frame):
         try:
             path = filedialog.askopenfilename(initialdir = '/', 
                                           title = "Select a template", 
-                                          filetypes = (("Text files", 
+                                          filetypes = (("text files", 
                                                         "*.txt*"), 
                                                        ("all files", 
                                                         "*.*")))  
@@ -145,11 +154,23 @@ class App(ttk.Frame):
             print('Operation not completed in filedialog')
     
     '''
+        Function to load the image path
+    '''
+    def load_img(self):
+        #try:
+        self.img_path = filedialog.askopenfilename(initialdir = '/', 
+                                      title = 'Select image', 
+                                      filetypes = (('jpeg files', '*.jpg'), ('all files', '*.*')))
+        self.button_image.config(style='Accent.TButton')
+        #except:
+        #   pass
+
+    '''
         Function to save in a custom directory the templates created in the text field
     '''
     def save(self):
         if self.input_text.edit_modified():
-            extensions = [('All Files', '*.*'),('Text Document', '*.txt')]
+            extensions = [('text document', '*.txt'), ('all files', '*.*'),]
             try:
                 #Create file and save its path 
                 path = filedialog.asksaveasfile(initialdir = "/", filetypes=extensions)
