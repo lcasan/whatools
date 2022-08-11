@@ -1,4 +1,5 @@
 from traceback import print_tb
+from typing import Dict
 from .import window_position
 from ..drives import Browser
 from tkinter import ttk
@@ -15,14 +16,19 @@ class App(ttk.Frame):
         self.parent.title("Whatools")
         self.parent.tk.call('wm', 'iconphoto', self.parent._w, tk.PhotoImage(file='src/img/whatools.png'))
         self.parent.update_idletasks()  
-        self.parent.geometry(window_position(self.parent, 710, 560))
+        self.parent.geometry(window_position(self.parent, 850, 600))
 
         #Make the app responsive
         for index in (0, 1):
             self.columnconfigure(index=index, weight=1)
             self.rowconfigure(index=index, weight=1)
+        
+        #Control variables
+        self.selected_groups = {} #Set of selected groups
+        self.start = True 
 
-        # Create widgets
+
+        #Create widgets
         self.setup_widgets()
 
     def setup_widgets(self):
@@ -54,8 +60,6 @@ class App(ttk.Frame):
             send_frame, text="Load", command= self.load
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
 
-        #tk.Button(text='\U0001F923', font=("", 100)).pack(side=tk.LEFT)
-
         # Button Save
         ttk.Button(
             send_frame, text="Save", command=self.save
@@ -64,7 +68,6 @@ class App(ttk.Frame):
         send_frame.columnconfigure(index=0, weight=1)
 
         ####### SECTION GROUPS #######
-
         # Create a Frame for the groups
         self.group_frame = ttk.LabelFrame(self, text="Groups", padding=(20, 10))
         self.group_frame.grid(row=0, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew")
@@ -94,16 +97,21 @@ class App(ttk.Frame):
         self.update()
 
         #Add new group
-        ttk.Button(self.group_frame, text='Create', style='Accent.TButton', command=self.new_group).pack(side='left', fill='both', pady=5, padx=(0,8))
+        frm_group = ttk.Frame(self.group_frame)
+        frm_group.pack(fill='both', expand=True)
+        ttk.Button(frm_group, text='Create', style='Accent.TButton', command=self.new_group).pack(side='top', fill='both', pady=5, padx=(0,8))
 
         #Delete group
-        ttk.Button(self.group_frame, text='Delete', command=self.delete_group).pack(side='left', fill='both', pady=5, padx=(0,8))
-
-        #Tag for group
-        ttk.Button(self.group_frame, text='Tag').pack(side='left',fill='both', pady=5, padx=(0,8))
+        ttk.Button(self.group_frame, text='Delete', command=self.delete_group).pack(side='left', fill='both', expand=True, pady=5, padx=(0,8))
 
         #Button select all groups
-        #ttk.Button(self.group_frame, text='all', command=self.select_all).pack(fill='both', pady=5, padx=(0,8))
+        ttk.Button(self.group_frame, text='check all', command=self.check_all).pack(side='left', fill='both', expand=True, pady=5, padx=(0,8))
+
+         #Button select all groups
+        ttk.Button(self.group_frame, text='uncheck all', command=self.uncheck_all).pack(side='left', fill='both', expand=True, pady=5, padx=(0,8))
+
+        #Tag for group
+        ttk.Button(self.group_frame, text='Tag').pack(side='left', expand=True,fill='both', pady=5, padx=(0,8))
 
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
@@ -122,8 +130,9 @@ class App(ttk.Frame):
         #List of groups selected
         groups = []
         for checkbutton in self.ls_checkbutton:
-            if checkbutton[0].get() == True:
-                groups.append(checkbutton[1])
+            if checkbutton[0] == True:
+                print(checkbutton[1])
+                #groups.append(checkbutton[1])
         
         browser = Browser()
         print('[Sending message]')
@@ -235,6 +244,12 @@ class App(ttk.Frame):
         #update tags
         self.combobox_tag.config(values=list(self.tags))
 
+        #Control variables for groups
+        if self.start == True:
+            self.start = False
+            for group in self.groups:
+                self.selected_groups[group[0]] = tk.BooleanVar()
+
         #update groups
         self.update_groups(self.groups)
     
@@ -250,11 +265,8 @@ class App(ttk.Frame):
         
         #Update list of groups
         posy = 3
-        self.ls_checkbutton = []
         for group in groups:
-            var = tk.BooleanVar()
-            self.ls_checkbutton.append((var,group[0]))            
-            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=var))
+            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=self.selected_groups[group[0]]))
             posy = posy + 30
             
         self.scrollbar.config(command=self.canvas.yview)
@@ -290,15 +302,27 @@ class App(ttk.Frame):
                     ls_groups.append((group))
                     continue
 
-            self.update_groups(ls_groups)
+            self.groups = ls_groups
+            self.update_groups(self.groups)
         else:
             self.update()
         
-    
-    #def select_all(self):
-    #    
-    #    for checkbutton in self.ls_checkbutton:
-    #        checkbutton[0] = True
+    '''
+        Function for check all visible groups
+    '''
+    def check_all(self):
+        for group in self.groups:
+            self.selected_groups[group[0]] = True
+
+    '''
+        Function for uncheck all visible groups
+    '''
+    def uncheck_all(self):
+        for group in self.groups:
+            self.selected_groups[group[0]] = tk.BooleanVar()
+        
+        self.update_groups(self.groups)
+            
  
        
         
