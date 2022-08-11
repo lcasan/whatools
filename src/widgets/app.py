@@ -1,3 +1,4 @@
+from traceback import print_tb
 from .import window_position
 from ..drives import Browser
 from tkinter import ttk
@@ -9,21 +10,17 @@ import sqlite3
 class App(ttk.Frame):
     def __init__(self, parent):
         ttk.Frame.__init__(self, parent)
-       
         #window config:
         self.parent = parent
         self.parent.title("Whatools")
         self.parent.tk.call('wm', 'iconphoto', self.parent._w, tk.PhotoImage(file='src/img/whatools.png'))
-        #self.parent.update_idletasks()  
-        self.parent.geometry(window_position(self.parent, 780, 560))
-        self.parent.resizable(False, False)
+        self.parent.update_idletasks()  
+        self.parent.geometry(window_position(self.parent, 710, 560))
 
-
-
-        # Make the app responsive
-        #for index in (0, 1):
-        #    self.columnconfigure(index=index, weight=1)
-        #    self.rowconfigure(index=index, weight=1)
+        #Make the app responsive
+        for index in (0, 1):
+            self.columnconfigure(index=index, weight=1)
+            self.rowconfigure(index=index, weight=1)
 
         # Create widgets
         self.setup_widgets()
@@ -56,6 +53,8 @@ class App(ttk.Frame):
         ttk.Button(
             send_frame, text="Load", command= self.load
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
+
+        #tk.Button(text='\U0001F923', font=("", 100)).pack(side=tk.LEFT)
 
         # Button Save
         ttk.Button(
@@ -101,7 +100,10 @@ class App(ttk.Frame):
         ttk.Button(self.group_frame, text='Delete', command=self.delete_group).pack(side='left', fill='both', pady=5, padx=(0,8))
 
         #Tag for group
-        ttk.Button(self.group_frame, text='Tag').pack(fill='both', pady=5, padx=(0,8))
+        ttk.Button(self.group_frame, text='Tag').pack(side='left',fill='both', pady=5, padx=(0,8))
+
+        #Button select all groups
+        #ttk.Button(self.group_frame, text='all', command=self.select_all).pack(fill='both', pady=5, padx=(0,8))
 
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
@@ -116,7 +118,7 @@ class App(ttk.Frame):
     def send_msg(self):            
         #Msg
         msg = self.input_text.get('1.0', 'end')
-        
+
         #List of groups selected
         groups = []
         for checkbutton in self.ls_checkbutton:
@@ -134,8 +136,8 @@ class App(ttk.Frame):
                 browser.send_message(msg, groups, True, False, self.img_path)
         else:
             print('False, True')
-            browser.send_message(msg, groups, False, True, self.img_path)           
-
+            browser.send_message(msg, groups, False, True, self.img_path)   
+                    
     '''
         Function to load the templates saved in a custom directory
     '''
@@ -157,13 +159,21 @@ class App(ttk.Frame):
         Function to load the image path
     '''
     def load_img(self):
-        #try:
-        self.img_path = filedialog.askopenfilename(initialdir = '/', 
-                                      title = 'Select image', 
-                                      filetypes = (('jpeg files', '*.jpg'), ('all files', '*.*')))
-        self.button_image.config(style='Accent.TButton')
-        #except:
-        #   pass
+        path = filedialog.askopenfilename(title = 'Select image', filetypes = (('jpeg files', '*.jpeg'), ('all files', '*.*')))
+        
+        #Change path for windows
+        path = path.split('/')
+        self.img_path = path[0]
+
+        for i in range(1, len(path)):
+            self.img_path += '\\'
+            self.img_path += path[i] 
+
+        #change style of button
+        if self.img_path != '':         
+            self.button_image.config(style='Accent.TButton')
+        else:
+            self.button_image.config(style='TButton')
 
     '''
         Function to save in a custom directory the templates created in the text field
@@ -244,7 +254,7 @@ class App(ttk.Frame):
         for group in groups:
             var = tk.BooleanVar()
             self.ls_checkbutton.append((var,group[0]))            
-            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=var, width=18))
+            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=var))
             posy = posy + 30
             
         self.scrollbar.config(command=self.canvas.yview)
@@ -285,7 +295,11 @@ class App(ttk.Frame):
             self.update()
         
     
-
+    #def select_all(self):
+    #    
+    #    for checkbutton in self.ls_checkbutton:
+    #        checkbutton[0] = True
+ 
        
         
             

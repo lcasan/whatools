@@ -5,11 +5,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 import pyperclip
 import time 
-from PIL import Image
 
 class Browser():
     def __init__(self):
-        self.drive = webdriver.Firefox(executable_path="src/drives/firefox/geckodriver")
+        self.drive = webdriver.Firefox(executable_path="src/drives/firefox/geckodriver-v0.31.0-win64/geckodriver.exe")
         self.drive.maximize_window()
         self.drive.get("https://web.whatsapp.com")
         
