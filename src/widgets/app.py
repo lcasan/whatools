@@ -25,7 +25,11 @@ class App(ttk.Frame):
         #Control variables
         self.groups = [] #List of whatsapp's groups 
         self.boolean_var_groups = {} #Set of selected groups
-        self.start = True 
+        self.var_search = tk.StringVar() 
+        self.var_tag = tk.StringVar()
+        self.img_path = 'none'
+        self.start = True
+
 
 
         #Create widgets
@@ -51,7 +55,6 @@ class App(ttk.Frame):
         ).pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
         
         #Button Load Image
-        self.img_path = 'none'
         self.button_image = ttk.Button(send_frame, text="Image", command= self.load_img)
         self.button_image.pack(side=tk.LEFT, fill='both', expand=True, padx=(0, 5), pady=5)
 
@@ -73,12 +76,10 @@ class App(ttk.Frame):
         self.group_frame.grid(row=0, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew")
 
         #Filter group by name
-        self.var_search = tk.StringVar()
         self.search = ttk.Entry(self.group_frame, textvariable=self.var_search)
         self.search.pack(fill='both', pady=5, padx=(0,8))
 
         #Filter group by tag
-        self.var_tag = tk.StringVar()        
         self.combobox_tag = ttk.Combobox(self.group_frame, textvariable=self.var_tag)      
         self.combobox_tag.pack(fill='both', pady=5, padx=(0,8))
 
