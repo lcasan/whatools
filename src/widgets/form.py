@@ -5,12 +5,15 @@ from ..database import cursor
 import sqlite3
 
 class Form(tk.Toplevel):
-    def __init__(self, parent, tags):
+    def __init__(self, parent, tags, boolean_var_groups):
         super().__init__(parent)
         self.parent = parent
         self.title("Form")
         self.resizable(False, False)
         self.geometry(window_position(self, 300, 250))
+
+
+        self.boolean_var_groups = boolean_var_groups
 
         #Entry
         ttk.Label(self, text='Group\'s name:').pack(pady=(10, 5))
@@ -30,10 +33,16 @@ class Form(tk.Toplevel):
     def create_group(self):
         name = self.name.get()
         tag = self.tag.get()
-
-        with sqlite3.connect('src/database/model.db') as db:
-            cursor = db.cursor()
-            cursor.execute("insert into grupo(name, tag, number_of_users) values (?, ?, ?)", (name, tag, 0))
-            db.commit()
         
+        if name in self.boolean_var_groups:
+            tk.messagebox.showinfo(message='The element already exists')
+        else:
+            with sqlite3.connect('src/database/model.db') as db:
+                cursor = db.cursor()
+                cursor.execute("insert into grupo(name, tag, number_of_users) values (?, ?, ?)", (name, tag, 0))
+                db.commit()
+
+            #Assign Boolean value
+            self.boolean_var_groups[name] = tk.BooleanVar()
+
         self.destroy()

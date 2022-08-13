@@ -1,5 +1,4 @@
-from traceback import print_tb
-from typing import Dict
+from src.drives import browser
 from .import window_position
 from ..drives import Browser
 from tkinter import ttk
@@ -16,7 +15,7 @@ class App(ttk.Frame):
         self.parent.title("Whatools")
         self.parent.tk.call('wm', 'iconphoto', self.parent._w, tk.PhotoImage(file='src/img/whatools.png'))
         self.parent.update_idletasks()  
-        self.parent.geometry(window_position(self.parent, 850, 600))
+        self.parent.geometry(window_position(self.parent, 980, 600))
 
         #Make the app responsive
         for index in (0, 1):
@@ -24,7 +23,8 @@ class App(ttk.Frame):
             self.rowconfigure(index=index, weight=1)
         
         #Control variables
-        self.selected_groups = {} #Set of selected groups
+        self.groups = [] #List of whatsapp's groups 
+        self.boolean_var_groups = {} #Set of selected groups
         self.start = True 
 
 
@@ -39,7 +39,7 @@ class App(ttk.Frame):
         send_frame.grid(row=0, column=0, padx=(20, 10), pady=(20, 10), sticky="nsew")
 
         # Input text msg
-        self.input_text = tk.Text(send_frame, width=51, height=22)
+        self.input_text = tk.Text(send_frame, width=67, height=22)
         self.input_text.pack(fill='both', expand=True)
 
         frm = ttk.Frame(send_frame)
@@ -99,19 +99,19 @@ class App(ttk.Frame):
         #Add new group
         frm_group = ttk.Frame(self.group_frame)
         frm_group.pack(fill='both', expand=True)
-        ttk.Button(frm_group, text='Create', style='Accent.TButton', command=self.new_group).pack(side='top', fill='both', pady=5, padx=(0,8))
+        ttk.Button(frm_group, text='Create', style='Accent.TButton', command=self.create_group).pack(side='top', fill='both', pady=5, padx=(0,8))
 
         #Delete group
         ttk.Button(self.group_frame, text='Delete', command=self.delete_group).pack(side='left', fill='both', expand=True, pady=5, padx=(0,8))
 
         #Button select all groups
-        ttk.Button(self.group_frame, text='check all', command=self.check_all).pack(side='left', fill='both', expand=True, pady=5, padx=(0,8))
+        ttk.Button(self.group_frame, text='Check all', command=self.check_all).pack(side='left', fill='both', expand=True, pady=5, padx=(0,8))
 
          #Button select all groups
-        ttk.Button(self.group_frame, text='uncheck all', command=self.uncheck_all).pack(side='left', fill='both', expand=True, pady=5, padx=(0,8))
+        ttk.Button(self.group_frame, text='Uncheck all', command=self.uncheck_all).pack(side='left', fill='both', expand=True, pady=5, padx=(0,8))
 
         #Tag for group
-        ttk.Button(self.group_frame, text='Tag').pack(side='left', expand=True,fill='both', pady=5, padx=(0,8))
+        ttk.Button(self.group_frame, text='Clean Chat', command=self.clean_chat).pack(side='left', expand=True,fill='both', pady=5, padx=(0,8))
 
         # Sizegrip
         self.sizegrip = ttk.Sizegrip(self)
@@ -120,6 +120,7 @@ class App(ttk.Frame):
         self.var_search.trace_add('write', self.filter_by_name)
         self.var_tag.trace_add('write', self.filter_by_tag)        
 
+    ####### PRINCIPAL FUNCTIONS #######
     '''
         Function to send a message to all groups
     '''
@@ -129,10 +130,9 @@ class App(ttk.Frame):
 
         #List of groups selected
         groups = []
-        for checkbutton in self.ls_checkbutton:
-            if checkbutton[0] == True:
-                print(checkbutton[1])
-                #groups.append(checkbutton[1])
+        for group in self.groups:
+            if self.boolean_var_groups[group[0]].get() == True:
+                groups.append(group[0])
         
         browser = Browser()
         print('[Sending message]')
@@ -147,7 +147,7 @@ class App(ttk.Frame):
             print('False, True')
             browser.send_message(msg, groups, False, True, self.img_path)   
                     
-    '''
+    '''#
         Function to load the templates saved in a custom directory
     '''
     def load(self): 
@@ -205,20 +205,21 @@ class App(ttk.Frame):
     '''
         Function to create new group
     '''
-    def new_group(self):
-        self.parent.wait_window(Form(parent=self.parent, tags=list(self.tags)))
+    def create_group(self):
+        self.parent.wait_window(Form(parent=self.parent, tags=list(self.tags), boolean_var_groups= self.boolean_var_groups))
         self.update()
         print('[updated groups]')
-    
+
     '''
         Function to delete group
     '''
     def delete_group(self):
-        #List of groups selected
-        groups = []
-        for checkbutton in self.ls_checkbutton:
-            if checkbutton[0].get() == True:
-                groups.append(checkbutton[1])
+        #List of selected groups
+        groups = self.find_boolean_var_groups()
+
+        #Delete booleanVar of group
+        for group in groups:
+            del self.boolean_var_groups[group]
         
         #Query to database
         with sqlite3.connect('src/database/model.db') as db:
@@ -244,11 +245,11 @@ class App(ttk.Frame):
         #update tags
         self.combobox_tag.config(values=list(self.tags))
 
-        #Control variables for groups
+        #Assign initial Boolean value for self.groups 
         if self.start == True:
             self.start = False
             for group in self.groups:
-                self.selected_groups[group[0]] = tk.BooleanVar()
+                self.boolean_var_groups[group[0]] = tk.BooleanVar()
 
         #update groups
         self.update_groups(self.groups)
@@ -266,7 +267,7 @@ class App(ttk.Frame):
         #Update list of groups
         posy = 3
         for group in groups:
-            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=self.selected_groups[group[0]]))
+            self.canvas.create_window(2, posy, anchor="nw", window=ttk.Checkbutton(self.canvas, text= group[0], variable=self.boolean_var_groups[group[0]]))
             posy = posy + 30
             
         self.scrollbar.config(command=self.canvas.yview)
@@ -279,13 +280,13 @@ class App(ttk.Frame):
         text = self.search.get()
         if text != '':
             #find substring in string
-            ls_groups = []
+            groups = []
             for group in self.groups:
                 if text == group[0][0:len(text)]:
-                    ls_groups.append(group)
+                    groups.append(group)
                     continue
 
-            self.update_groups(ls_groups)
+            self.update_groups(groups)
         else:
             self.update() 
 
@@ -296,13 +297,13 @@ class App(ttk.Frame):
         text = self.combobox_tag.get()
         if text != '':
             #find substring in string
-            ls_groups = []
+            groups = []
             for group in self.groups:
                 if text == group[1]:
-                    ls_groups.append((group))
+                    groups.append((group))
                     continue
 
-            self.groups = ls_groups
+            self.groups = groups
             self.update_groups(self.groups)
         else:
             self.update()
@@ -312,19 +313,31 @@ class App(ttk.Frame):
     '''
     def check_all(self):
         for group in self.groups:
-            self.selected_groups[group[0]] = True
+            self.boolean_var_groups[group[0]].set(True)
 
     '''
         Function for uncheck all visible groups
     '''
     def uncheck_all(self):
         for group in self.groups:
-            self.selected_groups[group[0]] = tk.BooleanVar()
-        
-        self.update_groups(self.groups)
-            
- 
-       
-        
-            
-  
+            self.boolean_var_groups[group[0]].set(False)
+    
+    '''
+        Function to clean chat of selected groups
+    '''        
+    def clean_chat(self):
+        groups = self.find_boolean_var_groups()
+
+        browser = Browser()
+        browser.clean_chat(groups)      
+
+    ####### AUXILIAR FUNCTIONS #######        
+    '''
+        Function to find selected groups
+    '''
+    def find_boolean_var_groups(self):
+        groups = [] # List with groups's names
+        for group in self.groups:
+            if self.boolean_var_groups[group[0]].get() == True:
+                groups.append(group[0])
+        return groups
